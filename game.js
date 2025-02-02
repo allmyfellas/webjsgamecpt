@@ -95,6 +95,7 @@ function createEnemy(x, z) {
   );
   enemy.position.set(x, 1, z);
   enemy.health = 50;
+  enemy.speed = 0.02; // Enemy movement speed
   scene.add(enemy);
   enemies.push(enemy);
 }
@@ -118,6 +119,14 @@ function checkCollisions() {
         }
       }
     });
+  });
+}
+
+// Enemy behavior
+function updateEnemies() {
+  enemies.forEach((enemy) => {
+    const direction = new THREE.Vector3().subVectors(camera.position, enemy.position).normalize();
+    enemy.position.add(direction.multiplyScalar(enemy.speed));
   });
 }
 
@@ -152,6 +161,7 @@ function animate() {
   });
 
   checkCollisions();
+  updateEnemies(); // Move enemies towards the player
   enemyAttack();
 
   velocity.set(0, 0, 0);
