@@ -96,6 +96,7 @@ function createEnemy(x, z) {
   enemy.position.set(x, 1, z);
   enemy.health = 50;
   enemy.speed = 0.02; // Enemy movement speed
+  enemy.attackCooldown = 0; // Cooldown timer for attacks
   scene.add(enemy);
   enemies.push(enemy);
 }
@@ -123,18 +124,24 @@ function checkCollisions() {
 }
 
 // Enemy behavior
-function updateEnemies() {
+function updateEnemies(deltaTime) {
   enemies.forEach((enemy) => {
     const direction = new THREE.Vector3().subVectors(camera.position, enemy.position).normalize();
     enemy.position.add(direction.multiplyScalar(enemy.speed));
+
+    if (enemy.attackCooldown > 0) {
+      enemy.attackCooldown -= deltaTime;
+    }
   });
 }
 
-// Enemy attacks
+// Enemy attacks with cooldown
 function enemyAttack() {
   enemies.forEach((enemy) => {
-    if (camera.position.distanceTo(enemy.position) < 2) {
+    if (camera.position.distanceTo(enemy.position) < 2 && enemy.attackCooldown <= 0) {
       health -= 1;
+      enemy.attackCooldown = 1000; // 1-second cooldown
+
       if (health <= 0) {
         alert('Game Over');
         window.location.reload();
@@ -143,9 +150,31 @@ function enemyAttack() {
   });
 }
 
+// Display health
+const healthDisplay = document.createElement('div');
+healthDisplay.style.position = 'absolute';
+healthDisplay.style.top = '10px';
+healthDisplay.style.left = '10px';
+healthDisplay.style.color = 'white';
+healthDisplay.style.fontSize = '20px';
+healthDisplay.style.fontWeight = 'bold'; // Added bold font
+healthDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // Added background color
+healthDisplay.style.padding = '5px 10px'; // Added padding
+healthDisplay.style.borderRadius = '5px'; // Added border radius
+document.body.appendChild(healthDisplay);
+
+function updateHealthDisplay() {
+  healthDisplay.textContent = `Health: ${health}`;
+}
+
 // Main game loop
+let lastTime = performance.now();
 function animate() {
   requestAnimationFrame(animate);
+
+  const currentTime = performance.now();
+  const deltaTime = currentTime - lastTime;
+  lastTime = currentTime;
 
   const speed = 0.1;
   if (moveForward) velocity.z = -speed;
@@ -161,8 +190,9 @@ function animate() {
   });
 
   checkCollisions();
-  updateEnemies(); // Move enemies towards the player
+  updateEnemies(deltaTime); // Pass deltaTime to updateEnemies
   enemyAttack();
+  updateHealthDisplay();
 
   velocity.set(0, 0, 0);
 
